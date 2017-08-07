@@ -1,17 +1,17 @@
 import tensorflow as tf
 import numpy as np
 
-class simple_lstm_encoder:
+class simple_lstm:
 
-    def __init__(self, embeddings, labels, lr, n_inputs, n_steps, n_hidden, n_batch, n_classes, max_iter, keep_prop):
-        self.lr = lr #0.001
-        self.n_inputs = n_inputs #10
-        self.n_steps = n_steps #15
-        self.n_hidden_units = n_hidden #20
-        self.batch_size = n_batch #200
-        self.n_classes = n_classes #1
-        self.training_iters = max_iter #5
-        self.keep_prob = keep_prop #0.7
+    def __init__(self, embeddings, labels):
+        self.lr = 0.001
+        self.n_inputs = 10
+        self.n_steps = 15
+        self.n_hidden_units = 20
+        self.batch_size = 200
+        self.n_classes = 1
+        self.training_iters = 5
+        self.keep_prob = 0.7
 
         self.xs_list = embeddings
         self.ys_list = labels
@@ -52,30 +52,17 @@ class simple_lstm_encoder:
         return results
 
     def train(self):
-        pred = self.lstm(self.xs, self.weights, self.biases)
-        cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels = self.ys, logits = pred))
-        train_op = tf.train.AdamOptimizer(self.lr).minimize(cost)
+        pred = tf.nn.sigmoid(self.lstm(self.xs, self.weights, self.biases))
         saver = tf.train.Saver()
 
         with tf.Session() as sess:
-            init = tf.global_variables_initializer()
-            sess.run(init)
+            saver.restore(sess, "answer/saved_net.ckpt")
             step = 0
+            result = []
             while step < self.training_iters:
                 pointer = step*self.batch_size%len(self.xs_list)
-                if pointer+self.batch_size > len(self.xs_list):
-                    step = step+1
-                    continue
                 batch_xs = np.array(self.xs_list[pointer:pointer+self.batch_size])
-                batch_ys = np.array(self.ys_list[pointer:pointer+self.batch_size])
                 batch_xs = batch_xs.reshape([self.batch_size, self.n_steps, self.n_inputs])
-                sess.run(train_op, feed_dict={self.xs: batch_xs,self.ys: batch_ys,})
-                if step % 50 == 0:
-                    print "Step "+repr(step)+": "+repr(sess.run(cost, feed_dict={self.xs: batch_xs,self.ys: batch_ys,}))
-                if step % 10000 == 0:
-                    save_path = saver.save(sess, "answer/saved_net.ckpt")
-                    print("Save to path: ", save_path)
+                result.append(sess.run(pred, feed_dict={self.xs: batch_xs}))
                 step = step+1
-            save_path = saver.save(sess, "answer/saved_net.ckpt")
-            print("Save to path: ", save_path)
-        return 1
+        return result

@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-class simple_lstm_encoder:
+class simple_lstm_de_prev:
 
     def __init__(self, embeddings, labels, lr, n_inputs, n_steps, n_hidden, n_batch, n_classes, max_iter, keep_prop):
         self.lr = lr #0.001
